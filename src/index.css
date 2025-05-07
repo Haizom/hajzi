@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Smooth Scrolling for Mobile */
+.snap-x {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Phone Input Styles */
+.phone-input-container .PhoneInput {
+  @apply flex items-center gap-2 rounded-lg;
+}
+
+.phone-input-container .PhoneInputCountry {
+  @apply flex items-center gap-1 px-2 py-1.5 rounded-md bg-gray-50;
+}
+
+.phone-input-container .PhoneInputCountryIcon {
+  @apply w-6 h-4 rounded overflow-hidden;
+}
+
+.phone-input-container .PhoneInputCountrySelectArrow {
+  @apply border-t-4 border-x-4 border-x-transparent border-t-gray-400;
+}
+
+.phone-input-container .PhoneInputInput {
+  @apply w-full px-3 py-2 text-sm border-0 focus:ring-0 focus:outline-none;
+}
+
+.phone-input-container .PhoneInputInput::placeholder {
+  @apply text-gray-400;
+}
+
+/* Calendar Styles */
+.rdp {
+  --rdp-cell-size: 40px;
+  --rdp-accent-color: #7c3aed;
+  --rdp-background-color: #f3f4f6;
+  margin: 0;
+}
+
+.rdp-months {
+  @apply justify-center;
+}
+
+.rdp-month {
+  @apply bg-white p-4 rounded-lg;
+}
+
+.rdp-day_selected,
+.rdp-day_selected:focus-visible,
+.rdp-day_selected:hover {
+  @apply bg-primary-600 text-white;
+}
+
+.rdp-day_range_middle {
+  @apply !bg-primary-50 !text-primary-900;
+}
+
+.rdp-day_outside {
+  @apply opacity-25;
+}
+
+.rdp-day_disabled {
+  @apply opacity-25 cursor-not-allowed;
+}
+
+.rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
+  @apply bg-gray-50;
+}
+
+.rdp-caption {
+  @apply px-2 mb-2;
+}
+
+.rdp-nav {
+  @apply mx-6;
+}
+
+/* Form Validation Styles */
+.form-error {
+  @apply text-xs text-red-600 mt-1 flex items-center gap-1;
+}
+
+.form-error::before {
+  content: "•";
+  @apply text-red-600;
+}
+
+/* Required Field Styles */
+.required-field::after {
+  content: "*";
+  @apply text-red-500 ml-1;
+}
+
+/* Custom Select Styles */
+.custom-select {
+  @apply appearance-none bg-no-repeat bg-[right_0.5rem_center] pr-8;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-size: 1.5rem;
+}
+
+[dir="rtl"] .custom-select {
+  @apply bg-[left_0.5rem_center] pl-8 pr-3;
+}
+
+/* Placeholder Styles */
+::placeholder {
+  @apply text-gray-400 font-normal;
+}
+
+/* Input Focus Styles */
+.focus-ring {
+  @apply focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none;
+}
