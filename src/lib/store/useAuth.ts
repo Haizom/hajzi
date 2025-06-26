@@ -1,73 +1,90 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { loginUser, registerUser, getCurrentUser } from '@/lib/api/auth';
 
-export type UserRole = 'owner' | 'user';
+export type UserRole = 'owner' | 'user' | 'admin';
 
 export type User = {
-  id: string;
+  _id: string;
   email: string;
   fullName: string;
   role: UserRole;
   isVerified: boolean;
-  propertyId?: string; // For property owners
-};
-
-// Mock users for demo
-export const MOCK_USERS = {
-  owner: {
-    id: '1',
-    email: 'crown.plaza@example.com',
-    fullName: 'Crown Plaza Hotel',
-    role: 'owner' as UserRole,
-    isVerified: true,
-    propertyId: '3' // ID of Crown Plaza Hotel from HOTELS_DATA
-  },
-  user: {
-    id: '2',
-    email: 'user@example.com',
-    fullName: 'Ahmed Mohammed',
-    role: 'user' as UserRole,
-    isVerified: true
-  }
+  phone?: string;
+  country?: string;
+  state?: string;
+  createdAt: string;
 };
 
 type AuthStore = {
   user: User | null;
+  token: string | null;
   isLoading: boolean;
+  error: string | null;
   setUser: (user: User | null) => void;
+  setToken: (token: string | null) => void;
   setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
   signOut: () => void;
   signIn: (email: string, password: string) => Promise<User>;
+  signUp: (userData: {
+    fullName: string;
+    email: string;
+    password: string;
+    phone: string;
+    country: string;
+    state: string;
+  }) => Promise<User>;
+  loadUser: () => Promise<User | null>;
 };
 
 export const useAuth = create<AuthStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
+      token: null,
       isLoading: false,
+      error: null,
       setUser: (user) => set({ user }),
+      setToken: (token) => set({ token }),
       setLoading: (loading) => set({ isLoading: loading }),
-      signOut: () => set({ user: null }),
-      signIn: async (email: string, password: string) => {
-        // Mock authentication
-        // In a real app, this would be an API call
-        return new Promise((resolve, reject) => {
-          setTimeout(() => {
-            // Mock passwords
-            const mockPasswords = {
-              'crown.plaza@example.com': 'owner123',
-              'user@example.com': 'user123'
-            };
-
-            if (mockPasswords[email as keyof typeof mockPasswords] === password) {
-              const user = email === 'crown.plaza@example.com' ? MOCK_USERS.owner : MOCK_USERS.user;
-              set({ user });
-              resolve(user);
-            } else {
-              reject(new Error('Invalid credentials'));
-            }
-          }, 1000);
-        });
+      setError: (error) => set({ error }),
+      signOut: () => set({ user: null, token: null }),
+      signIn: async (email, password) => {
+        set({ isLoading: true, error: null });
+        try {
+          const { token, user } = await loginUser({ email, password });
+          set({ user, token, isLoading: false });
+          return user;
+        } catch (error) {
+          set({ isLoading: false, error: error instanceof Error ? error.message : 'Login failed' });
+          throw error;
+        }
+      },
+      signUp: async (userData) => {
+        set({ isLoading: true, error: null });
+        try {
+          const { token, user } = await registerUser(userData);
+          set({ user, token, isLoading: false });
+          return user;
+        } catch (error) {
+          set({ isLoading: false, error: error instanceof Error ? error.message : 'Registration failed' });
+          throw error;
+        }
+      },
+      loadUser: async () => {
+        const { token } = get();
+        if (!token) return null;
+        
+        set({ isLoading: true, error: null });
+        try {
+          const { user } = await getCurrentUser(token);
+          set({ user, isLoading: false });
+          return user;
+        } catch (error) {
+          set({ isLoading: false, error: error instanceof Error ? error.message : 'Failed to load user', token: null, user: null });
+          return null;
+        }
       }
     }),
     {

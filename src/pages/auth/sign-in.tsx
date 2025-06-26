@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/lib/store/useLanguage';
 import { useAuth } from '@/lib/store/useAuth';
@@ -9,15 +9,21 @@ import { TermsPrivacy } from '@/components/auth/terms-privacy';
 
 export function SignInPage() {
   const { language } = useLanguage();
-  const { signIn } = useAuth();
+  const { signIn, isLoading, error, user } = useAuth();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+
+  useEffect(() => {
+    // If user is already logged in, redirect to home
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -32,7 +38,7 @@ export function SignInPage() {
       newErrors.password = language === 'ar' ? 'كلمة المرور مطلوبة' : 'Password is required';
     }
 
-    setErrors(newErrors);
+    setFormErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
@@ -40,19 +46,11 @@ export function SignInPage() {
     e.preventDefault();
 
     if (validateForm()) {
-      setIsLoading(true);
-      
       try {
         await signIn(formData.email, formData.password);
         navigate('/');
-      } catch (error) {
-        setErrors({
-          form: language === 'ar'
-            ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة'
-            : 'Invalid email or password'
-        });
-      } finally {
-        setIsLoading(false);
+      } catch (err) {
+        // Error is already handled in the store
       }
     }
   };
@@ -80,11 +78,11 @@ export function SignInPage() {
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-white py-8 px-4 shadow-xl shadow-primary-100/10 sm:rounded-xl sm:px-10 border border-gray-100">
-            {errors.form && (
+            {error && (
               <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200">
                 <div className="flex items-center gap-2 text-red-800">
                   <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                  <p className="text-sm">{errors.form}</p>
+                  <p className="text-sm">{error}</p>
                 </div>
               </div>
             )}
@@ -106,14 +104,14 @@ export function SignInPage() {
                     autoComplete="email"
                     required
                     className={`block w-full pl-10 pr-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors ${
-                      errors.email ? 'border-red-300' : 'border-gray-300'
+                      formErrors.email ? 'border-red-300' : 'border-gray-300'
                     }`}
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
-                {errors.email && (
-                  <p className="mt-2 text-sm text-red-600">{errors.email}</p>
+                {formErrors.email && (
+                  <p className="mt-2 text-sm text-red-600">{formErrors.email}</p>
                 )}
               </div>
 
@@ -133,7 +131,7 @@ export function SignInPage() {
                     autoComplete="current-password"
                     required
                     className={`block w-full pl-10 pr-10 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors ${
-                      errors.password ? 'border-red-300' : 'border-gray-300'
+                      formErrors.password ? 'border-red-300' : 'border-gray-300'
                     }`}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -150,8 +148,8 @@ export function SignInPage() {
                     )}
                   </button>
                 </div>
-                {errors.password && (
-                  <p className="mt-2 text-sm text-red-600">{errors.password}</p>
+                {formErrors.password && (
+                  <p className="mt-2 text-sm text-red-600">{formErrors.password}</p>
                 )}
               </div>
 

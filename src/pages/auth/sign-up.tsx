@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/lib/store/useLanguage';
+import { useAuth } from '@/lib/store/useAuth';
 import { Button } from '@/components/ui/button';
 import { User, Mail, Lock, MapPin, Phone, Loader2, AlertCircle, Building2, Eye, EyeOff } from 'lucide-react';
 import { PasswordStrength } from '@/components/auth/password-strength';
@@ -9,20 +10,27 @@ import { TermsPrivacy } from '@/components/auth/terms-privacy';
 
 export function SignUpPage() {
   const { language } = useLanguage();
+  const { signUp, isLoading, error, user } = useAuth();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     fullName: '',
-    country: '',
-    state: '',
+    country: 'Yemen',
+    state: 'Sanaa',
     phone: '',
     email: '',
     password: '',
     confirmPassword: ''
   });
+
+  useEffect(() => {
+    // If user is already logged in, redirect to home
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -62,25 +70,25 @@ export function SignUpPage() {
         : 'Passwords do not match';
     }
 
-    setErrors(newErrors);
+    setFormErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      setIsLoading(true);
       try {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        navigate('/verify-account');
-      } catch (error) {
-        setErrors({
-          form: language === 'ar'
-            ? 'حدث خطأ أثناء إنشاء الحساب. يرجى المحاولة مرة أخرى.'
-            : 'An error occurred while creating your account. Please try again.'
+        await signUp({
+          fullName: formData.fullName,
+          email: formData.email,
+          password: formData.password,
+          phone: formData.phone,
+          country: formData.country,
+          state: formData.state
         });
-      } finally {
-        setIsLoading(false);
+        navigate('/');
+      } catch (err) {
+        // Error is already handled in the store
       }
     }
   };
@@ -108,11 +116,11 @@ export function SignUpPage() {
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-white py-8 px-4 shadow-xl shadow-primary-100/10 sm:rounded-xl sm:px-10 border border-gray-100">
-            {errors.form && (
+            {error && (
               <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200">
                 <div className="flex items-center gap-2 text-red-800">
                   <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                  <p className="text-sm">{errors.form}</p>
+                  <p className="text-sm">{error}</p>
                 </div>
               </div>
             )}
@@ -133,14 +141,14 @@ export function SignUpPage() {
                     type="text"
                     required
                     className={`block w-full pl-10 pr-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors ${
-                      errors.fullName ? 'border-red-300' : 'border-gray-300'
+                      formErrors.fullName ? 'border-red-300' : 'border-gray-300'
                     }`}
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   />
                 </div>
-                {errors.fullName && (
-                  <p className="mt-2 text-sm text-red-600">{errors.fullName}</p>
+                {formErrors.fullName && (
+                  <p className="mt-2 text-sm text-red-600">{formErrors.fullName}</p>
                 )}
               </div>
 
@@ -160,14 +168,14 @@ export function SignUpPage() {
                       type="text"
                       required
                       className={`block w-full pl-10 pr-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors ${
-                        errors.country ? 'border-red-300' : 'border-gray-300'
+                        formErrors.country ? 'border-red-300' : 'border-gray-300'
                       }`}
                       value={formData.country}
                       onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                     />
                   </div>
-                  {errors.country && (
-                    <p className="mt-2 text-sm text-red-600">{errors.country}</p>
+                  {formErrors.country && (
+                    <p className="mt-2 text-sm text-red-600">{formErrors.country}</p>
                   )}
                 </div>
 
@@ -185,14 +193,14 @@ export function SignUpPage() {
                       type="text"
                       required
                       className={`block w-full pl-10 pr-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors ${
-                        errors.state ? 'border-red-300' : 'border-gray-300'
+                        formErrors.state ? 'border-red-300' : 'border-gray-300'
                       }`}
                       value={formData.state}
                       onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                     />
                   </div>
-                  {errors.state && (
-                    <p className="mt-2 text-sm text-red-600">{errors.state}</p>
+                  {formErrors.state && (
+                    <p className="mt-2 text-sm text-red-600">{formErrors.state}</p>
                   )}
                 </div>
               </div>
@@ -212,14 +220,14 @@ export function SignUpPage() {
                     type="tel"
                     required
                     className={`block w-full pl-10 pr-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors ${
-                      errors.phone ? 'border-red-300' : 'border-gray-300'
+                      formErrors.phone ? 'border-red-300' : 'border-gray-300'
                     }`}
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
                 </div>
-                {errors.phone && (
-                  <p className="mt-2 text-sm text-red-600">{errors.phone}</p>
+                {formErrors.phone && (
+                  <p className="mt-2 text-sm text-red-600">{formErrors.phone}</p>
                 )}
               </div>
 
@@ -239,14 +247,14 @@ export function SignUpPage() {
                     autoComplete="email"
                     required
                     className={`block w-full pl-10 pr-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors ${
-                      errors.email ? 'border-red-300' : 'border-gray-300'
+                      formErrors.email ? 'border-red-300' : 'border-gray-300'
                     }`}
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
-                {errors.email && (
-                  <p className="mt-2 text-sm text-red-600">{errors.email}</p>
+                {formErrors.email && (
+                  <p className="mt-2 text-sm text-red-600">{formErrors.email}</p>
                 )}
               </div>
 
@@ -265,7 +273,7 @@ export function SignUpPage() {
                     type={showPassword ? 'text' : 'password'}
                     required
                     className={`block w-full pl-10 pr-10 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors ${
-                      errors.password ? 'border-red-300' : 'border-gray-300'
+                      formErrors.password ? 'border-red-300' : 'border-gray-300'
                     }`}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -282,8 +290,8 @@ export function SignUpPage() {
                     )}
                   </button>
                 </div>
-                {errors.password && (
-                  <p className="mt-2 text-sm text-red-600">{errors.password}</p>
+                {formErrors.password && (
+                  <p className="mt-2 text-sm text-red-600">{formErrors.password}</p>
                 )}
                 <PasswordStrength password={formData.password} />
               </div>
@@ -303,7 +311,7 @@ export function SignUpPage() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     required
                     className={`block w-full pl-10 pr-10 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors ${
-                      errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                      formErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'
                     }`}
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
@@ -320,8 +328,8 @@ export function SignUpPage() {
                     )}
                   </button>
                 </div>
-                {errors.confirmPassword && (
-                  <p className="mt-2 text-sm text-red-600">{errors.confirmPassword}</p>
+                {formErrors.confirmPassword && (
+                  <p className="mt-2 text-sm text-red-600">{formErrors.confirmPassword}</p>
                 )}
               </div>
 
